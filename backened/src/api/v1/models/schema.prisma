@@ -1,0 +1,144 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String @id @unique @default(uuid())
+  name     String
+  email    String @unique
+  password String
+  role     Role   @default(USER)
+
+  order Order[]
+
+  payment Payment_detail[]
+
+  reviews Reviews[]
+
+  profile Profile?
+}
+
+model Profile {
+  id      String @id @unique @default(uuid())
+  phone   String @unique
+  address String
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model Category {
+  id           String    @id @unique @default(uuid())
+  categoryName String    @unique
+  product      Product[]
+}
+
+model Product {
+  id      String  @id @unique @default(uuid())
+  name    String
+  stock   Int
+  price   Int
+  image   String?
+  desc    String
+  cloudId String?
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  orderDetail Order_detail[]
+
+  reviews Reviews[]
+}
+
+model Reviews {
+  id      String @id @unique @default(uuid())
+  comment String
+  rating  Int
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  @@unique([productId, userId])
+}
+
+model Order {
+  id      String   @id @unique @default(uuid())
+  address String
+  total   Int
+  time    DateTime @default(now())
+
+  trackOrder Track_order?
+
+  paymentDetail Payment_detail?
+
+  orderDetail Order_detail[]
+
+  reveiws Reviews[]
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model Payment_detail {
+  id       String   @id @unique @default(uuid())
+  amount   Int
+  currency String
+  time     DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id])
+}
+
+model Order_detail {
+  id       String @id @unique @default(uuid())
+  subTotal Int
+  quantity Int
+  price    Int
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id])
+}
+
+model Track_order {
+  id      String @id @unique @default(uuid())
+  address String
+  status  Status @default(PREPARING)
+
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id])
+}
+
+enum Role {
+  USER
+  ADMIN
+  EMPLOYEE
+}
+
+enum Status {
+  PREPARING
+  SHIPPED
+  DELIVERED
+}
